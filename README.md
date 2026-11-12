@@ -1,188 +1,162 @@
-# Documentation technique : RecipeSphere
+# RecipeSphere
 
-**Application Android de recettes de cuisine**
-
-Document rédigé dans le cadre du projet de matiére développement mobile. Il décrit l'architecture,  les étapes de réalisation et les problèmes rencontrés.
-
-## 1. Présentation du projet
-
-### 1.1 Objectif
-
-RecipeSphere est une application Android  qui permet de :
-
-- parcourir et rechercher des recettes issues d'une API publique (Spoonacular) ;
-- filtrer les recettes par type de cuisine (italienne, française, japonaise...) ;
-- consulter le détail d'une recette (photo, durée, portions, ingrédients, étapes) ;
-- créer, consulter et supprimer ses propres recettes grâce à une API personnelle (MockAPI) ;
-- enregistrer des recettes en favoris, conservées sur l'appareil même après fermeture de l'application.
+Application Android native de découverte et de gestion de recettes de cuisine, développée en **Kotlin** avec **Jetpack Compose**.
 
 
-### 1.3 Périmètre fonctionnel
 
-| Onglet | Fonction | Source des données |
-| --- | --- | --- |
-| Accueil | Liste paginée, recherche, filtre par cuisine | API Spoonacular |
-| Recherche | Recherche libre avec historique des recherches récentes | API Spoonacular |
-| Ajouter | Formulaire de création de recette | API MockAPI (POST) |
-| Mes recettes | Liste et suppression de ses recettes | API MockAPI (GET, DELETE) |
-| Favoris | Recettes aimées, persistées localement | Base Room |
+## Sommaire
 
-## 2. Environnement technique
+- [Fonctionnalités](#fonctionnalités)
 
-| Élément | Choix |
-| --- | --- |
+- [Stack technique](#stack-technique)
+- [Architecture](#architecture)
+- [Structure du projet](#structure-du-projet)
+- [Installation](#installation)
+- [Configuration de la clé API](#configuration-de-la-clé-api)
+- [Sources de données](#sources-de-données)
+- [Choix techniques](#choix-techniques)
+- [Limites connues et pistes d'amélioration](#limites-connues-et-pistes-damélioration)
+
+## Fonctionnalités
+
+- **Parcourir** une large base de recettes avec pagination.
+- **Filtrer** par type de cuisine (italienne, française, mexicaine, japonaise, indienne, etc.).
+- **Rechercher** une recette ou un ingrédient, avec historique des recherches récentes.
+- **Consulter le détail** d'une recette : photo, durée, portions, ingrédients, étapes de préparation.
+- **Créer ses propres recettes** via un formulaire (titre, image, durée, ingrédients, étapes).
+- **Gérer ses recettes** : consultation et suppression avec confirmation.
+- **Enregistrer des favoris**, conservés sur l'appareil après fermeture de l'application.
+- **Interface adaptative** : barre de navigation en bas sur téléphone, rail latéral et affichage liste + détail côte à côte sur grand écran ou en paysage.
+
+
+
+## Stack technique
+
+| Domaine | Technologie |
+|---|---|
 | Langage | Kotlin 2.2.10 |
-| Navigation | Navigation Compose |
-| API publique | Spoonacular  |
-| API personnelle | MockAPI |
+| Interface | Jetpack Compose, Material 3 |
+| Réseau | Ktor Client (moteur CIO) |
+| Navigation | Navigation Compose, Material 3 Adaptive Navigation Suite |
+| SDK | minSdk 24, targetSdk 37 |
 
-## 3. Architecture
+## Architecture
 
-### 3.1 Principe général
+L'application est organisée en couches avec un flux de données unidirectionnel.
 
-L'application suit une architecture en couches, conforme à l'architecture classique d'une application Android présentée en cours :
+```
+┌──────────────────────────────┐
+│  UI (Jetpack Compose)        │  affiche l'état, transmet les actions
+└──────────────┬───────────────┘
+               │ StateFlow / événements
+┌──────────────▼───────────────┐
+│  ViewModel                   │  état de l'écran, logique de présentation
+└──────────────┬───────────────┘
+               │ fonctions suspend
+┌──────────────▼───────────────┐
+│  Repository                  │  point d'accès unique aux données
+└───────┬──────────────┬───────┘
+        │              │
+┌───────▼──────┐ ┌─────▼────────┐
+│ Ktor Client  │ │ Room         │
+│ (API REST)   │ │ (SQLite)     │
+└──────────────┘ └──────────────┘
+```
 
-1. **Interface** : affiche l'état et transmet les actions de l'utilisateur.
-2. **ViewModel** : stocke l'état de l'écran, décide quoi faire à chaque action, survit aux changements de configuration (rotation).
-3. **Repository** : unique point d'accès aux données .
-4. **Sources de données** : API distantes (Ktor) et base locale (Room).
+- L'interface observe un `StateFlow` avec `collectAsStateWithLifecycle()`.
+- Les actions utilisateur remontent au ViewModel, qui met à jour l'état.
+- Les ViewModels survivent aux changements de configuration (rotation).
 
-
-### 3.2 Organisation du code
+## Structure du projet
 
 ```
 com.example.myapplication
-├─ MainActivity.kt
-├─ model/         Recipe, MyRecipe, Cuisines 
-├─ local/         FavoriteRecipe (entité), FavoriteDao, AppDatabase (Room)
-├─ repository/    RecipeRepository, MyRecipeRepository, FavoriteRepository
-├─ viewmodel/     RecipeViewModel, SearchViewModel, RecipeDetailViewModel,
-│                 MyRecipesViewModel, FavoritesViewModel
-├─ screens/       MainScreen, HomeScreen, SearchScreen, AddRecipeScreen,
-│                 MyRecipesScreen, FavoritesScreen, RecipeDetailScreen,
-│                 ListDetailLayout, MyRecipeCard, PlaceholderScreen
-└─ ui/theme/      Couleurs et thème
+├── MainActivity.kt
+├── model/            Recipe, MyRecipe, Cuisines (classes @Serializable)
+├── local/            FavoriteRecipe (entité), FavoriteDao, AppDatabase
+├── repository/       RecipeRepository, MyRecipeRepository, FavoriteRepository
+├── viewmodel/        RecipeViewModel, SearchViewModel, RecipeDetailViewModel,
+│                     MyRecipesViewModel, FavoritesViewModel
+├── screens/          MainScreen, HomeScreen, SearchScreen, AddRecipeScreen,
+│                     MyRecipesScreen, FavoritesScreen, RecipeDetailScreen,
+│                     ListDetailLayout, MyRecipeCard, PlaceholderScreen
+└── ui/theme/         Couleurs et thème
 ```
 
-### 3.3 Chemin d'une donnée (exemple : l'accueil)
+## Installation
 
-1. `MainActivity` crée les ViewModels avec `by viewModels()`.
-2. `RecipeViewModel` lance au démarrage une coroutine (`viewModelScope.launch`) qui appelle `RecipeRepository.getRecipes(...)`.
-3. Le repository envoie une requête Ktor à Spoonacular et convertit le JSON en objet `RecipeResponse`.
-4. Le ViewModel met à jour son `MutableStateFlow<HomeUiState>`.
-5. `MainScreen` lit cet état avec `collectAsStateWithLifecycle()` et le passe à `HomeScreen`.
-6. `HomeScreen` affiche la grille. Un clic sur un élément appelle une fonction du ViewModel.
+### Prérequis
 
-## 4. Couche données
-### 4.1 Accès réseau avec Ktor
+- Android Studio (version compatible avec AGP 9.4.1)
+- JDK 11 ou supérieur
+- Un émulateur ou un appareil Android (API 24 minimum)
+- Une clé API [Spoonacular](https://spoonacular.com/food-api) (offre gratuite disponible)
 
- Le client est créé dans le repository, avec deux plugins :
+### Lancer le projet
 
-- `ContentNegotiation` avec `json(Json { ignoreUnknownKeys = true })` pour convertir le JSON ;
-- `Logging` qui écrit les requêtes dans le logcat sous l'étiquette `Ktor-Logger`.
+```bash
+git clone <url-du-depot>
+cd MyApplication
+```
 
-Paramètres supplémentaires ajoutés pour la robustesse :
+1. Ouvrir le dossier dans Android Studio.
+2. Renseigner la clé API (voir section suivante).
+3. Lancer une synchronisation Gradle (**Sync Now**).
+4. Exécuter l'application (**Run ▶**).
 
-- `expectSuccess = true` : toute réponse HTTP en erreur (401, 402, 429...) lève une exception, interceptée par le ViewModel et affichée à l'utilisateur ;
-- `HttpTimeout` (30 secondes) en cas de connexion lente.
+## Configuration de la clé API
 
-Chaque requête est une **fonction `suspend`**, appelée depuis une coroutine.
+La clé n'est jamais écrite dans le code source. Elle est lue depuis `local.properties`, fichier local non versionné.
 
-#### Repository Spoonacular
+Ajouter à la racine du projet, dans `local.properties` :
 
-| Fonction | Requête | Usage |
-| --- | --- | --- |
-| `getRecipes(offset, query, cuisine, number)` | `GET /recipes/complexSearch` | Accueil, recherche, pagination |
-| `getRecipeDetail(id)` | `GET /recipes/{id}/information` | Page de détail |
+```properties
+SPOONACULAR_API_KEY=votre_cle_ici
+```
 
-La clé API n'est pas écrite dans le code : elle est lue dans `local.properties`  et exposée via `BuildConfig.SPOONACULAR_API_KEY`. Le plugin de logging masque la valeur de la clé dans le logcat.
+La clé est ensuite exposée à l'application via `BuildConfig.SPOONACULAR_API_KEY`.
 
-#### Repository MockAPI
+Autres réglages requis (déjà présents dans le dépôt) :
 
-| Fonction | Requête | Usage |
-| --- | --- | --- |
-| `getRecipes()` | `GET /recipes` | Liste de mes recettes |
-| `createRecipe(recipe)` | `POST /recipes`  | Ajout d'une recette |
-| `deleteRecipe(id)` | `DELETE /recipes/{id}` | Suppression |
+- `android.permission.INTERNET` dans `AndroidManifest.xml`.
+- `android.disallowKotlinSourceSets=false` dans `gradle.properties`, nécessaire pour utiliser KSP avec AGP 9.
 
-### 4.2 Persistance locale avec Room
+> ⚠️ Vérifier que `local.properties` figure bien dans `.gitignore` et ne jamais publier de clé.
 
-Room est structurée en trois composants
+## Sources de données
 
-| Composant | Fichier | Rôle |
-| --- | --- | --- |
-| Entité | `FavoriteRecipe` | Table `favorites` (id, title, image). L'identifiant Spoonacular est la clé primaire : une recette ne peut pas être enregistrée deux fois. |
-| DAO | `FavoriteDao` | `getAll()` retourne un `Flow` ; `insert()` et `delete()` sont des fonctions `suspend`. |
-| Base de données | `AppDatabase` | Fournit le DAO. Le motif *singleton* (`getInstance`) garantit une seule instance de base dans l'application. |
+### Spoonacular (API publique)
 
-Le DAO retourne un `Flow` : lorsqu'une ligne est ajoutée ou supprimée, la liste observée est mise à jour automatiquement, sans rechargement manuel.
+| Requête | Usage |
+|---|---|
+| `GET /recipes/complexSearch` | Accueil, recherche, filtre par cuisine, pagination |
+| `GET /recipes/{id}/information` | Détail d'une recette |
 
-`FavoriteRepository` expose ce flux et deux opérations (`add`, `remove`). Il convertit une `Recipe` en entité `FavoriteRecipe`.
+L'offre gratuite est limitée par un quota journalier de points. Une erreur `402 Payment Required` indique que le quota du jour est atteint.
 
-## 5. Gestion d'état : les ViewModels
+### MockAPI (API personnelle)
 
-Chaque écran possède un état décrit par une classe de données, exposé par un `StateFlow` en lecture seule (le `MutableStateFlow` reste privé). Cette séparation garantit que seul le ViewModel modifie l'état.
+| Requête | Usage |
+|---|---|
+| `GET /recipes` | Liste de ses recettes |
+| `POST /recipes` | Création d'une recette |
+| `DELETE /recipes/{id}` | Suppression |
 
-| ViewModel | État | Responsabilité |
-| --- | --- | --- |
-| `RecipeViewModel` | `HomeUiState` | Liste de l'accueil, filtre de cuisine, recherche, pagination |
-| `SearchViewModel` | `SearchUiState` | Recherche libre, historique (8 entrées maximum), pagination |
-| `RecipeDetailViewModel` | `DetailUiState` (sealed : `Loading`, `Success`, `Error`) | Détail d'une recette ; créé avec une fabrique recevant l'identifiant |
-| `MyRecipesViewModel` | `MyRecipesUiState` | Lecture, création, suppression des recettes personnelles |
-| `FavoritesViewModel` | `StateFlow<List<FavoriteRecipe>>` | Favoris issus de Room, bascule ajout/retrait |
+### Room (local)
 
-## 6. Interface utilisateur (Jetpack Compose)
+Table `favorites` (`id`, `title`, `image`) stockant les recettes aimées. Le DAO expose un `Flow` : l'interface se met à jour automatiquement à chaque ajout ou retrait.
 
-### 6.1 Principes
+## Choix techniques
 
-Chaque élément visuel est une fonction `@Composable` qui reçoit des paramètres. L'état est **remonté** (*state hoisting*) : les composants de présentation ne gardent pas d'état métier, ils reçoivent des valeurs et des fonctions de rappel (`onClick`, `onToggleLike`, `onSave`...). Cela les rend réutilisables : `RecipeCard` sert dans l'accueil, la recherche et les favoris.
-
-
-
-### 6.2 Gestion des états d'un écran
-
-Chaque écran traite explicitement les cas : chargement (indicateur), erreur (message et bouton « Réessayer »), liste vide (message explicatif) et succès. Le détail utilise un `sealed interface` (`Loading`, `Success`, `Error`) évalué par un `when` exhaustif.
-
-### 6.3 Écran de détail unifié
-
-Une recette Spoonacular et une recette MockAPI ont des formats différents. Les deux sont converties en un modèle d'affichage unique, `RecipeDetailUi`, par deux fonctions d'extension (`RecipeDetail.toUi()` et `MyRecipe.toUi()`). Un seul composant (`RecipeDetailContent`) affiche donc les deux types. Le HTML renvoyé par Spoonacular est converti en lignes de texte par `htmlToLines`.
-
-### 6.4 Formulaire d'ajout
-
-`AddRecipeScreen` gère localement le titre, l'image, la durée, ainsi que des listes dynamiques d'ingrédients et d'étapes (`mutableStateListOf`). Le titre est obligatoire. Une saisie non validée par le bouton « + » est tout de même prise en compte à l'enregistrement. L'action remonte par `onSave`, et le ViewModel gère l'envoi (état `isSaving`, message `saveError`).
-
-## 7. Navigation et adaptation à la taille d'écran
-
-### 7.1 Navigation
-
-L'écran principal (`MainScreen`) combine :
-
-- `NavigationSuiteScaffold` : barre de navigation en bas sur petit écran, rail latéral sur écran large ;
-- `NavHost` avec les routes `home`, `search`, `add`, `my_recipes`, `favorites`, `recipe/{id}` et `my_recipe/{id}` ;
-- une navigation d'onglets qui sauvegarde et restaure l'état (`saveState`, `restoreState`, `launchSingleTop`).
-
-
-### 7.2 Layouts adaptatifs
-
- Les seuils utilisés suivent les classes de largeur d'Android :
-
-| Largeur | Mise en page |
-| --- | --- |
-| moins de 600 dp | Barre de navigation en bas, liste seule, détail en plein écran |
-| 600 dp ou plus | Rail de navigation à gauche |
-| 840 dp ou plus | Liste et détail côte à côte (`ListDetailLayout`) |
-
-Autres adaptations : grilles à colonnes adaptatives (`GridCells.Adaptive(170.dp)`) et formulaire d'ajout sur deux colonnes en grand écran (`BoxWithConstraints`).
-
-### 7.3 Changement d'orientation
-
-Le détail existe sous deux formes : un panneau (grand écran) et une page (petit écran). Deux mécanismes `LaunchedEffect(isExpanded)` assurent la cohérence :
-
-- **Paysage vers portrait** : si une recette est sélectionnée dans le panneau, la sélection est effacée et la page `recipe/{id}` (ou `my_recipe/{id}`) s'ouvre en plein écran ;
-- **Portrait vers paysage** : si une page de détail est ouverte, elle se ferme (`popBackStack`) pour revenir à la mise en page liste et détail.
-
-La sélection n'est pas transférée à l'écran retrouvé dans le second cas ; le panneau affiche « Choisis une recette ».
-
-
+- **Ktor Client** dans les repositories, avec `ContentNegotiation` (JSON) et `Logging` (logcat, clé masquée).
+- **`ignoreUnknownKeys = true`** : l'API renvoie de nombreux champs inutilisés par les modèles.
+- **`expectSuccess = true`** : les réponses HTTP en erreur (401, 402, 429) lèvent une exception, affichée à l'utilisateur avec un bouton « Réessayer ».
+- **`HttpTimeout`** de 30 secondes pour les connexions lentes.
+- **Valeurs par défaut** dans les modèles `@Serializable` pour tolérer les champs absents.
+- **États d'écran explicites** : chargement, erreur, liste vide, succès (`sealed interface` pour le détail).
+- **Annulation des requêtes** : la recherche précédente est annulée avant d'en lancer une nouvelle, afin d'éviter l'affichage de résultats obsolètes.
+- **Écran de détail unifié** : les recettes Spoonacular et MockAPI sont converties vers un modèle d'affichage commun (`RecipeDetailUi`).
+- **Mise en page adaptative** : rail de navigation à partir de 600 dp, liste + détail côte à côte à partir de 840 dp, grilles à colonnes adaptatives. Le passage portrait/paysage ouvre ou ferme automatiquement la page de détail correspondante.
+- **Pagination** : décalage calculé d'après le nombre d'éléments déjà chargés.
 
 
