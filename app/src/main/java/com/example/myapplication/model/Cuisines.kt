@@ -1,6 +1,5 @@
 package com.example.myapplication.model
 
-// Valeurs acceptées par le paramètre "cuisine" de Spoonacular (valeur API, libellé affiché)
 val CUISINES = listOf(
     "italian" to "Italien",
     "french" to "Français",

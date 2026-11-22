@@ -80,7 +80,10 @@ dependencies {
     implementation(libs.ktor.content)
     implementation(libs.ktor.serialization)
 
-    implementation("androidx.navigation:navigation-compose:2.8.9")
+    // Navigation 3
+    implementation(libs.androidx.navigation3.ui)
+    implementation(libs.androidx.navigation3.runtime)
+    implementation(libs.androidx.lifecycle.viewmodel.navigation3)
     implementation("androidx.compose.material:material-icons-core")
     implementation("androidx.compose.material:material-icons-extended")
     implementation("androidx.compose.material3:material3-adaptive-navigation-suite")

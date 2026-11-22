@@ -18,7 +18,6 @@ import com.example.myapplication.ui.theme.AppBar
 import com.example.myapplication.ui.theme.AppGray
 import com.example.myapplication.ui.theme.AppTile
 
-// Petit écran : seulement la liste. Grand écran : la liste à gauche, le détail à droite.
 @Composable
 fun ListDetailLayout(
     isExpanded: Boolean,
@@ -36,7 +35,6 @@ fun ListDetailLayout(
     }
 }
 
-// Affiché dans le panneau de droite tant qu'aucune recette n'est choisie
 @Composable
 fun EmptyDetail(modifier: Modifier = Modifier) {
     Box(modifier = modifier.fillMaxSize(), contentAlignment = Alignment.Center) {

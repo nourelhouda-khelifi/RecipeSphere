@@ -59,7 +59,6 @@ fun MyRecipesScreen(
     onOpen: (MyRecipe) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    // La recette pour laquelle on demande confirmation de suppression
     var toDelete by remember { mutableStateOf<MyRecipe?>(null) }
 
     when {

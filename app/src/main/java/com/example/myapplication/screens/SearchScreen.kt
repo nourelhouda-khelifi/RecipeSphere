@@ -36,7 +36,6 @@ import com.example.myapplication.ui.theme.AppAccent
 import com.example.myapplication.ui.theme.AppGray
 import com.example.myapplication.viewmodel.SearchUiState
 
-// Un élément qui prend toute la largeur de la grille
 private val fullRow: LazyGridItemSpanScope.() -> GridItemSpan = { GridItemSpan(maxLineSpan) }
 
 @Composable

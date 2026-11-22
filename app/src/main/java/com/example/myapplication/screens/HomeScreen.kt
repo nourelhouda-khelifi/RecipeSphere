@@ -68,7 +68,6 @@ import com.example.myapplication.ui.theme.AppTile
 import com.example.myapplication.model.CUISINES
 import com.example.myapplication.viewmodel.HomeUiState
 
-// Drapeau affiché en badge (clé = valeur API de la cuisine)
 private val cuisineFlags = mapOf(
     "italian" to "🇮🇹",
     "french" to "🇫🇷",
@@ -82,7 +81,6 @@ private val cuisineFlags = mapOf(
     "middle eastern" to "🌍"
 )
 
-// Un élément qui prend toute la largeur de la grille
 private val fullWidth: LazyGridItemSpanScope.() -> GridItemSpan = { GridItemSpan(maxLineSpan) }
 
 @Composable
@@ -99,7 +97,7 @@ fun HomeScreen(
     modifier: Modifier = Modifier
 ) {
     LazyVerticalGrid(
-        // Autant de colonnes que la largeur le permet (cartes de 170 dp minimum)
+
         columns = GridCells.Adaptive(minSize = 170.dp),
         modifier = modifier.fillMaxSize(),
         contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 24.dp),

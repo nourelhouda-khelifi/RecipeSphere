@@ -49,7 +49,6 @@ import com.example.myapplication.ui.theme.AppIndicator
 import com.example.myapplication.ui.theme.AppTile
 import com.example.myapplication.viewmodel.DetailUiState
 
-// Un seul format d'affichage, que la recette vienne de Spoonacular ou de MockAPI
 data class RecipeDetailUi(
     val title: String,
     val image: String,
@@ -138,7 +137,6 @@ fun RecipeDetailContent(
     onBack: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    // Sur grand écran, le contenu reste centré avec une largeur maximale
     Box(modifier = modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
         Column(
             modifier = Modifier
