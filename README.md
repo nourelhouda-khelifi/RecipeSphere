@@ -5,12 +5,10 @@ Application Android native de découverte et de gestion de recettes de cuisine, 
 ## Sommaire
 
 - [Fonctionnalités](#fonctionnalités)
-- [Architecture](#architecture)
 - [Installation](#installation)
 - [Configuration de la clé API](#configuration-de-la-clé-api)
 - [Sources de données](#sources-de-données)
-- [Choix techniques](#choix-techniques)
-- [Limites connues et pistes d'amélioration](#limites-connues-et-pistes-damélioration)
+
 
 ## Fonctionnalités
 
@@ -29,8 +27,8 @@ Application Android native de découverte et de gestion de recettes de cuisine, 
 
 ### Prérequis
 
-- Android Studio et un émulateur ou un appareil Android (API 24 minimum)
-- Une clé API [Spoonacular](https://spoonacular.com/food-api) (offre gratuite disponible)
+- Android Studio et un émulateur ou un appareil Android 
+- Une clé API [Spoonacular](https://spoonacular.com/food-api) 
 
 ### Lancer le projet
 
@@ -41,14 +39,11 @@ cd MyApplication
 
 1. Ouvrir le dossier dans Android Studio.
 2. Renseigner la clé API (voir section suivante).
-3. Lancer une synchronisation Gradle (**Sync Now**).
-4. Exécuter l'application (**Run ▶**).
+3. Exécuter l'application (**Run ▶**).
 
 ## Configuration de la clé API
 
-La clé n'est jamais écrite dans le code source. Elle est lue depuis `local.properties`, fichier local non versionné.
-
-Ajouter à la racine du projet, dans `local.properties` :
+La clé n'est pas écrite dans le code source. Elle est lue depuis `local.properties`
 
 ```properties
 SPOONACULAR_API_KEY=votre_cle_ici
