@@ -1,6 +1,6 @@
 # RecipeSphere
 
-Application Android native de découverte et de gestion de recettes de cuisine, développée en **Kotlin** avec **Jetpack Compose**.
+Application Android de gestion de recettes de cuisine.
 
 ## Sommaire
 
