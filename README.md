@@ -7,7 +7,6 @@ Application Android de gestion de recettes de cuisine.
 - [Fonctionnalités](#fonctionnalités)
 - [Installation](#installation)
 - [Configuration de la clé API](#configuration-de-la-clé-api)
-- [Sources de données](#sources-de-données)
 
 
 ## Fonctionnalités
@@ -50,28 +49,5 @@ SPOONACULAR_API_KEY=votre_cle_ici
 ```
 
 La clé est ensuite exposée à l'application via `BuildConfig.SPOONACULAR_API_KEY`.
-
-
-## Sources de données
-
-### Spoonacular (API publique)
-
-| Requête | Usage |
-|---|---|
-| `GET /recipes/complexSearch` | Accueil, recherche, filtre par cuisine, pagination |
-| `GET /recipes/{id}/information` | Détail d'une recette |
-
-### MockAPI (API personnelle)
-
-| Requête | Usage |
-|---|---|
-| `GET /recipes` | Liste de ses recettes |
-| `POST /recipes` | Création d'une recette |
-| `DELETE /recipes/{id}` | Suppression |
-
-### Room (local)
-
-Table `favorites` (`id`, `title`, `image`) stockant les recettes aimées. Le DAO expose un `Flow` : l'interface se met à jour automatiquement à chaque ajout ou retrait.
-
 
 
